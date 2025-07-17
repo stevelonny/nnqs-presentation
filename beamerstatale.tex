@@ -340,14 +340,15 @@ for grad_i in grad_log_psi:
 \framesubtitle{Optimizers - Stochastic Reconfiguration}
 The SR approach computes the variational increments as follows:
 \begin{lstlisting}[language=Python, style=kaolstplain]
-O_mean = tf.reduce_mean(O, axis=0)
 # compute covariance matrix / QGT
-O_O = tf.matmul(O_mean, O_mean, transpose_a=True)
+O_mean = tf.reduce_mean(O, axis=0)
+O_centered = O - O_mean
+O_O = tf.matmul(O_centered, O_centered, transpose_a=True)
 S = O_O / norm
 # compute force vector
 mean_energy = tf.reduce_mean(local_energies)
 F_vec = (
-	tf.reduce_mean(local_energies[:, None] * O, axis=0) - mean_energy * O_mean
+	tf.reduce_mean(local_energies * O, axis=0) - mean_energy * O_mean
 )
 # solve for delta
 P = tf.shape(S)[0]
