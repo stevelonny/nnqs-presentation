@@ -9,6 +9,10 @@ on:
       - beamerstatale.tex
       - beamerthemesintef.sty
       - sintefcolor.sty
+
+permissions:
+  contents: write
+
 jobs:
   build_latex:
     runs-on: ubuntu-latest
@@ -23,4 +27,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PDF
-          path: beamerstatale.tex
+          path: beamerstatale.pdf
+      - name: Commit PDF to repository
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add beamerstatale.pdf
+          git commit -m "Auto-update PDF" || exit 0
+          git push
