@@ -62,7 +62,7 @@
 	defaultdialect=[LaTeX]Tex,
 }
 
-
+\renewcommand{\footnotesize}{\scriptsize}
 
 \newcommand{\testcolor}[1]{\colorbox{#1}{\textcolor{#1}{test}}~\texttt{#1}}
 
@@ -154,10 +154,10 @@ E_0 \;\le\;
 $$
 \vskip1\baselineskip
 
-The parameters $\mathcal{W}$ are optimized using a gradient descent method\footnote{Becca F, Sorella S. \textit{Quantum Monte Carlo Approaches for Correlated Systems}. Cambridge University Press; 2017}:
+The parameters $\mathcal{W}$ are optimized using a gradient descent method:
 \begin{itemize}
-	\item Variational Monte Carlo (VMC)
-	\item Stochastic Reconfiguration (SR)
+	\item Variational Monte Carlo (VMC)\footnote{Moritz Reh, Markus Schmitt, Martin Gärttner, Optimizing design choices for neural quantum states, \textit{Phys. Rev. B 107}, 195115 (2023)}
+	\item Stochastic Reconfiguration (SR)\footnote{Becca F, Sorella S. \textit{Quantum Monte Carlo Approaches for Correlated Systems}. Cambridge University Press; 2017}
 \end{itemize}
 
 \end{frame}
@@ -279,7 +279,7 @@ Samples configurations from the RBM.
 
 \begin{itemize}
     \item \textbf{Metropolis-Hastings} MCMC using \textit{TensorFlow Probability}
-    \item \textbf{Gibbs sampling} Double-step method to sample visible and hidden variables
+    \item \textbf{Gibbs sampling} Double-step method to sample visible and hidden variables\footnote{Francesco D'Angelo, Lucas Böttcher, Learning the Ising model with generative neural networks, \textit{Phys. Rev. Research 2}, 023266 (2020)}
 \end{itemize}
 
 Provides batches of configurations. Example:
@@ -486,7 +486,19 @@ Using $J = -1.0$ and $h=0.5$
 \end{frame}
 
 \begin{frame}{References}
+\begin{thebibliography}{99}
+\bibitem{carleo2017}
+Giuseppe Carleo, Matthias Troyer, Solving the quantum many-body problem with artificial neural networks. \textit{Science} 355, 602-606 (2017).
 
+\bibitem{reh2023}
+Moritz Reh, Markus Schmitt, Martin Gärttner, Optimizing design choices for neural quantum states, \textit{Phys. Rev. B 107}, 195115 (2023).
+
+\bibitem{becca2017}
+Becca F, Sorella S. \textit{Quantum Monte Carlo Approaches for Correlated Systems}. Cambridge University Press; 2017.
+
+\bibitem{dangelo2020}
+Francesco D'Angelo, Lucas Böttcher, Learning the Ising model with generative neural networks, \textit{Phys. Rev. Research 2}, 023266 (2020).
+\end{thebibliography}
 \end{frame}
 
 \backmatter
