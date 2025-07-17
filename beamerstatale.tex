@@ -137,7 +137,7 @@ Considering a spin configuration $\vec{\sigma}$ and a set of parameters $\mathca
 $$\psi\left( \vec{\sigma}, \mathcal{W} \right) = e^{\sum_{i} b_i \sigma_i + \sum_{j} c_j h_j + \sum_{i,j} W_{ij} \sigma_i h_j}$$
 
 With no intra-layer connections:
-$$\psi\left( \vec{\sigma}, \mathcal{W} \right) = e^{\sum_{i} b_i \sigma_i} \times \prod_{j=1}^{M} {\left[ c_j h_j + \sum_{i} W_{ij} \sigma_i h_j\right]}$$
+$$\psi\left( \vec{\sigma}, \mathcal{W} \right) = e^{\sum_{i} b_i \sigma_i} \times \prod_{j=1}^{M} {2 cosh\left[c_j + \sum_{i} W_{ij} \sigma_i\right]}$$
 
 From the RBM we can sample configurations $\vec{\sigma}$.
 
@@ -222,23 +222,45 @@ self.W = tf.Variable(
 self.b = tf.Variable(tf.random.normal([self.N_visible], dtype=tf.complex64))
 self.c = tf.Variable(tf.random.normal([self.N_hidden], dtype=tf.complex64))
 \end{lstlisting}
-\begin{center}
-    \includegraphics[height=3cm]{images/rbm_usage.png}
-\end{center}
+
+$$\psi\left(\vec{\sigma}, \mathcal{W}\right) = e^{\sum_{i} b_i \sigma_i} \times \prod_{j=1}^{M} {2 cosh\left[c_j + \sum_{i} W_{ij} \sigma_i\right]}$$
 
 \end{frame}
 
 \begin{frame}[fragile]{Code Implementation}
 \framesubtitle{RBM - Logarithm of the Wave Function}
-Provides method to compute the logarithm of the wave function:
+
+\begin{center}
+    \includegraphics[height=2cm]{images/rbm_usage.png}
+\end{center}
+
+$$log\left(\psi\right) = \sum_{i} b_i \sigma_i + \sum_{j=1}^{M} log\left[{2 cosh\left(c_j + \sum_{i} W_{ij} \sigma_i\right)} \right]$$
+
+\end{frame}
+
+\begin{frame}[fragile]{Code Implementation}
+\framesubtitle{RBM - Logarithm of the Wave Function}
+\begin{columns}
+\begin{column}{0.6\textwidth}
 \begin{lstlisting}[language=Python, style=kaolstplain]
-def log_psi(self, samples):
-    casted_samples = 2.0 * tf.cast(samples, tf.complex64) - tf.ones_like(samples, dtype=tf.complex64)
-    sum_visible = tf.reduce_sum(self.a * casted_samples, axis=1)
-    w_h = self.b + tf.matmul(casted_samples, self.W)
-    sum_hidden = tf.reduce_sum(tf.math.log(2.0 * (tf.math.cosh(self.b + tf.matmul(casted_samples, self.W)))), axis=1)
-    return sum_visible + sum_hidden
+sum_visible = tf.reduce_sum(
+	a * spins, axis=1
+)
+w_h = b + tf.matmul(spins, W)
+sum_hidden = tf.reduce_sum(
+	tf.math.log(2.0 * (
+		tf.math.cosh(b + tf.matmul(spins, W))
+	)),axis=1
+)
+return sum_visible + sum_hidden
 \end{lstlisting}
+\end{column}
+\begin{column}{0.38\textwidth}
+$$\sum_{i} b_i \sigma_i$$
+$$\sum_{j=1}^{M} log\left[{2 cosh\left(c_j + \sum_{i} W_{ij} \sigma_i\right)} \right]$$
+\end{column}
+\end{columns}
+
 \end{frame}
 
 
@@ -253,6 +275,7 @@ Samples configurations from the RBM.
 \end{itemize}
 
 Provides batches of configurations. Example:
+\begin{center}
 \begin{lstlisting}[language=Python, style=kaolstplain]
 >>> sam.sample(rbm)
 <tf.Tensor: shape=(5, 4), dtype=float32, numpy=
@@ -261,7 +284,8 @@ array([[0., 0., 0., 0.],
        [0., 0., 1., 0.],
        [0., 0., 0., 0.],
        [0., 0., 0., 1.]], dtype=float32)>
-\end{lstlisting}
+\end{lstlisting}	
+\end{center}
 
 \end{frame}
 
@@ -271,22 +295,24 @@ array([[0., 0., 0., 0.],
 Simple 1D Ising Hamiltonian:
 $$ H = -J \sum_{i} \sigma_{i} \sigma_{i+1} - h \sum_{i} \sigma_{i} $$
 
-Provides \lstinline[style=kaolstplain]|local_energy(samples)| to compute local energies.
+Provides \lstinline[style=kaolstplain]|local_energy(samples)| which computes $E_{\text{loc}}$ for each configuration $\vec{\sigma}$.
 
 \end{frame}
 
 \begin{frame}[fragile]{Code Implementation}
 \framesubtitle{Optimizers}
-Both VMC and SR optimizers leverage \lstinline[style=kaolstplain]|tf.GradientTape| to compute gradients.
+Leverage \lstinline[style=kaolstplain]|tf.GradientTape| to compute gradients of $log\left(\psi\right)$
 \begin{lstlisting}[language=Python, style=kaolstplain]
 with tf.GradientTape() as tape:
 	log_psi = self.wave_function.log_psi(samples)
-
 grad_log_psi = tape.jacobian(log_psi, self.wave_function.trainable_variables)
 \end{lstlisting}
 \vskip1\baselineskip
 
-Both methods update the parameters of the wave function in the same way:
+VMC and SR methods obtain parameters update in different ways.
+\vskip1\baselineskip
+
+Update the parameters of the wave function in the same way:
 \begin{lstlisting}[language=Python, style=kaolstplain]
 for grad_val, var in grads_vars:
 	var.assign_sub(self.learning_rate * grad_val)
@@ -299,18 +325,14 @@ The VMC approach computes the variational increments as follows:
 \begin{lstlisting}[language=Python, style=kaolstplain]
 mean_energy = tf.reduce_mean(local_energies)
 for grad_i in grad_log_psi:
-	if grad_i is not None:
-		expand_shape = tf.concat([[tf.shape(local_energies)[0]], tf.ones(tf.rank(grad_i) - 1, dtype=tf.int32)], axis=0)
-		e_loc_expanded = tf.reshape(local_energies, expand_shape)
-		loc_grad = e_loc_expanded * grad_i
-		grad_energy = tf.reduce_mean(loc_grad, axis=0)
-		grad_log_psi_mean = tf.reduce_mean(grad_i, axis=0)
+	loc_grad = e_loc * grad_i
+	grad_energy = tf.reduce_mean(loc_grad, axis=0)
+	grad_log_psi_mean = tf.reduce_mean(grad_i, axis=0)
 
-		vmc_grad = 2.0 * tf.math.real(grad_energy - mean_energy * grad_log_psi_mean)
-		vmc_grad = tf.cast(vmc_grad, tf.complex64)  # Ensure dtype matches variable
-		gradients.append(vmc_grad)
-	else:
-		gradients.append(None)
+	vmc_grad = 2.0 * tf.math.real(
+		grad_energy - mean_energy * grad_log_psi_mean
+	)
+	gradients.append(vmc_grad)
 \end{lstlisting}
 \end{frame}
 
@@ -318,11 +340,9 @@ for grad_i in grad_log_psi:
 \framesubtitle{Optimizers - Stochastic Reconfiguration}
 The SR approach computes the variational increments as follows:
 \begin{lstlisting}[language=Python, style=kaolstplain]
-O = tf.concat(flat_grads, axis=1)
 O_mean = tf.reduce_mean(O, axis=0)
 # compute covariance matrix / QGT
 O_O = tf.matmul(O_mean, O_mean, transpose_a=True)
-norm = tf.cast(n_samples, O_centered.dtype)
 S = O_O / norm
 # compute force vector
 mean_energy = tf.reduce_mean(local_energies)
@@ -332,6 +352,7 @@ F_vec = (
 # solve for delta
 P = tf.shape(S)[0]
 S_reg = S + self.epsilon * tf.eye(P, dtype=S.dtype)
+# dW = S^{-1} F
 gradients = tf.linalg.solve(S_reg, tf.expand_dims(F_vec, 1))
 \end{lstlisting}
 \end{frame}
