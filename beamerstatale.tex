@@ -199,13 +199,21 @@ $$O_i = \frac{\partial log\left(\psi\left( \vec{\sigma}, \mathcal{W} \right)\rig
 \end{chapter}
 
 \begin{frame}[fragile]{Code Implementation}
-\framesubtitle{Project Structure}
-\begin{itemize}
-	\item \lstinline[style=kaolstplain]|RBM| class computes $log(\psi)$
-	\item Sampler(s) sample configurations from the RBM
-	\item Hamiltonian class computes local energies
-	\item \lstinline[style=kaolstplain]|QOptimizer| class implements the optimizers
-\end{itemize}
+\framesubtitle{Code Structure}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+\begin{lstlisting}[style=kaolstplain]
+nnqs/
+- nnqs.py			# RBM
+- hamiltonian.py	# Hamiltonian
+- optimizer.py		# Optimizers
+- sampler.py		# Sampler
+\end{lstlisting}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[height=6cm]{images/pipeline.png}
+\end{column}
+\end{columns}
 \end{frame}
 
 \begin{frame}[fragile]{Code Implementation}
@@ -270,7 +278,7 @@ $$\sum_{j=1}^{M} log\left[{2 cosh\left(c_j + \sum_{i} W_{ij} \sigma_i\right)} \r
 Samples configurations from the RBM.
 
 \begin{itemize}
-    \item \textbf{Metropolis-Hastings} Random Walk using \textit{TensorFlow Probability}
+    \item \textbf{Metropolis-Hastings} MCMC using \textit{TensorFlow Probability}
     \item \textbf{Gibbs sampling} Double-step method to sample visible and hidden variables
 \end{itemize}
 
@@ -351,7 +359,9 @@ The SR approach computes the variational increments as follows:
 # compute covariance matrix / QGT
 O_mean = tf.reduce_mean(O, axis=0)
 O_centered = O - O_mean
-O_O = tf.matmul(O_centered, O_centered, transpose_a=True)
+O_O = tf.matmul(
+	O_centered, O_centered, transpose_a=True
+)
 S = O_O / norm
 \end{lstlisting}
 \end{column}
@@ -393,7 +403,9 @@ gradients = tf.linalg.solve(S_reg, tf.expand_dims(F_vec, 1))
 \begin{frame}{Results}
 \framesubtitle{1D Ising Model - 16 spins}
 Using $J = 1.0$ and $h=0.5$
+\begin{center}
 \includegraphics[height=6cm]{images/16spin_history_j1.png}
+\end{center}
 \end{frame}
 
 \begin{frame}{Results}
@@ -420,7 +432,9 @@ Using $J = 1.0$ and $h=0.5$
 \begin{frame}{Results}
 \framesubtitle{1D Ising Model - 16 spins}
 Using $J = -1.0$ and $h=0.5$
+\begin{center}
 \includegraphics[height=6cm]{images/16spin_history_jm1.png}
+\end{center}
 \end{frame}
 
 \begin{frame}{Results}
@@ -441,6 +455,7 @@ Using $J = -1.0$ and $h=0.5$
 \framesubtitle{Optimization and Extensions}
 \begin{columns}
 \begin{column}{0.5\textwidth}
+\textbf{Extensions}
 \begin{itemize}
 	\item Extend to 2D systems
 	\item Other neural networks (FFNN, CNN)
@@ -448,21 +463,24 @@ Using $J = -1.0$ and $h=0.5$
 \end{itemize}
 \end{column}
 \begin{column}{0.5\textwidth}
+\textbf{Optimization}
 \begin{itemize}
 	\item Efficient SR update (single parameter updates)
 	\item Change tensor framework (JAX, ...)
 \end{itemize}
 \end{column}
 \end{columns}
-\end{frame}
+\vskip1.5\baselineskip
+\textbf{Other Projects}
 
-\begin{frame}{Other Works}
 \begin{columns}
-\begin{column}{0.6\textwidth}
+\begin{column}{0.8\textwidth}
 \textbf{NetKet}: The Machine-Learning toolbox for Quantum Physics
 \end{column}
-\begin{column}{0.3\textwidth}
-\includegraphics[width=\textwidth]{images/netket.png}
+\begin{column}{0.18\textwidth}
+\begin{center}	
+\includegraphics[height=1.5cm]{images/netket.png}
+\end{center}
 \end{column}
 \end{columns}
 \end{frame}
