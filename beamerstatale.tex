@@ -88,18 +88,27 @@
 	\item Neural-network quantum states can offer expressivity with a compact set of parameters
 \end{itemize}
 
-\textbf{How Neural Networks can represent ground states for a many-body quantum system.}
+\textbf{Neural Networks can represent ground states for a many-body quantum system}\footnote{Giuseppe Carleo, Matthias Troyer, Solving the quantum many-body problem with artificial neural networks. \textit{Science} 355, 602-606 (2017)}
 
 \end{frame}
+
+\begin{chapter}[assets/background_negative]{}{Project Outline}
+\framesubtitle{Find the Ground State}
+\begin{itemize}
+	\item Restricted Boltzmann Machine as a neural network
+	\item Sample configurations from RBM
+	\item Train RBM to find the ground state
+\end{itemize}
+\end{chapter}
 
 \begin{frame}{Restricted Boltzmann Machine}
 \framesubtitle{Generative Model}
 \begin{columns}
 \begin{column}{0.68\textwidth}
 \begin{itemize}
-    \item Learns $p(\vec{x})$ of the input data $\vec{x}$
+    \item Learns $p(\vec{\sigma})$ of the input data $\vec{\sigma}$
     \item Two layers: $N$ visible and $M$ hidden
-    \item Trainable parameters $\mathcal{W}$: weights $W_{ij}$ and biases $b_i$, $c_j$
+    \item Parameters $\mathcal{W}$: weights $W_{ij}$ and biases $b_i$, $c_j$
 \end{itemize}
 \end{column}
 \begin{column}{0.3\textwidth}
@@ -113,7 +122,7 @@
 \begin{frame}{Restricted Boltzmann Machine}
 \framesubtitle{Probability Distribution}
 Internal Energy:
-$$E(\vec{\sigma}, \vec{h}) = -\sum_{i} b_i v_i - \sum_{j} c_j h_j - \sum_{i,j} W_{ij} v_i h_j$$
+$$E(\vec{\sigma}, \vec{h}) = -\sum_{i} b_i \sigma_i - \sum_{j} c_j h_j - \sum_{i,j} W_{ij} \sigma_i h_j$$
 
 Probability Distribution:
 $$p(\vec{\sigma}, \vec{h}) = \frac{1}{Z} e^{-E(\vec{\sigma}, \vec{h})}$$
@@ -129,20 +138,20 @@ $$\psi\left( \vec{\sigma}, \mathcal{W} \right) = e^{\sum_{i} b_i \sigma_i + \sum
 
 With no intra-layer connections:
 $$\psi\left( \vec{\sigma}, \mathcal{W} \right) = e^{\sum_{i} b_i \sigma_i} \times \prod_{j=1}^{M} {\left[ c_j h_j + \sum_{i} W_{ij} \sigma_i h_j\right]}$$
+
+From the RBM we can sample configurations $\vec{\sigma}$.
+
 \end{frame}
 
 \begin{frame}{Training}
 \framesubtitle{Reinforcement Learning}
-\begin{columns}
-\begin{column}{0.5\textwidth}
-Minimize the energy expectation value:
-$$E = \langle \hat{H} \rangle = \langle E_{\text{loc}} \rangle $$
-\end{column}
-\begin{column}{0.5\textwidth}    
-where $E_{\text{loc}}$ is the local energy:
-$$E_{\text{loc}}(\vec{\sigma}) = \frac{\hat{H} \psi\left( \vec{\sigma}, \mathcal{W} \right)}{\psi\left( \vec{\sigma}, \mathcal{W} \right)}$$
-\end{column}
-\end{columns}
+Update parameters $\mathcal{W}$ towards energy minimum.
+
+$$
+E_0 \;\le\;
+\frac{\bra{\psi_{\mathcal{W}}} \hat H \ket{\psi_{\mathcal{W}}} }
+	{\bra{\psi_{\mathcal{W}}} \ket{\psi_{\mathcal{W}}}}
+$$
 \vskip1\baselineskip
 
 The parameters $\mathcal{W}$ are optimized using a gradient descent method\footnote{Becca F, Sorella S. \textit{Quantum Monte Carlo Approaches for Correlated Systems}. Cambridge University Press; 2017}:
@@ -153,27 +162,27 @@ The parameters $\mathcal{W}$ are optimized using a gradient descent method\footn
 
 \end{frame}
 
-\begin{frame}{Ground State Search}
+\begin{frame}{Training}
 \framesubtitle{Variational Monte Carlo}
 We can compute the gradients:
 \begin{equation*}
 \begin{aligned}
-    \nabla_{\mathcal{W}} E &= \nabla_{\mathcal{W}} \langle E_{\text{loc}} \rangle \\
+    \nabla_{\mathcal{W}} \left(E\right) &= \nabla_{\mathcal{W}} \langle E_{\text{loc}} \rangle \\
     &= \langle E_{\text{loc}} \nabla_{\mathcal{W}} log(p_{\psi}) \rangle \\
     &= 2 \mathfrak{R} \left[ \langle E_{\text{loc}} \nabla_{\mathcal{W}} log(\psi) \rangle - \langle E_{\text{loc}} \rangle \langle \nabla_{\mathcal{W}} log(\psi) \rangle \right]
 \end{aligned}
 \end{equation*}
 And consequently update the parameters:
-$$\mathcal{W}^{'} = \mathcal{W} - \eta \nabla_{\mathcal{W}} E$$
+$$\Delta \mathcal{W} = - \eta \nabla_{\mathcal{W}} \left(E\right)$$
 \end{frame}
 
-\begin{frame}{Ground State Search}
+\begin{frame}{Training}
 \framesubtitle{Stochastic Reconfiguration}
 Parameters evolution in the variational space:
-$$\mathcal{W}\left( p + 1\right) = \mathcal{W}\left( p \right) - \mathbf{S}^{-1} \vec{F}$$
+$$\Delta \mathcal{W} = - \eta \mathbf{S}^{-1} \vec{F}$$
 where $\mathbf{S}^{-1}$ is the pseudo-inverse of the covariance matrix:
 $$\mathbf{S}_{ij} = \langle O_i^{*} O_j \rangle - \langle O_i^{*} \rangle \langle O_j \rangle$$
-and $\vec{F}$ is the gradient of the energy:
+and $\vec{F}$ is the force vector:
 $$F_i = \langle O_i^{*} E_{\text{loc}} \rangle - \langle O_i^{*} \rangle \langle E_{\text{loc}} \rangle$$
 where $O_i$ are the local operators defined as:
 $$O_i = \frac{\partial log\left(\psi\left( \vec{\sigma}, \mathcal{W} \right)\right)}{\partial W_{ij}}$$
@@ -188,6 +197,16 @@ $$O_i = \frac{\partial log\left(\psi\left( \vec{\sigma}, \mathcal{W} \right)\rig
     \item Optimizers
 \end{itemize}
 \end{chapter}
+
+\begin{frame}[fragile]{Code Implementation}
+\framesubtitle{Project Structure}
+\begin{itemize}
+	\item \lstinline[style=kaolstplain]|RBM| class computes $log(\psi)$
+	\item Sampler(s) sample configurations from the RBM
+	\item Hamiltonian class computes local energies
+	\item \lstinline[style=kaolstplain]|QOptimizer| class implements the optimizers
+\end{itemize}
+\end{frame}
 
 \begin{frame}[fragile]{Code Implementation}
 \framesubtitle{RBM}
@@ -229,7 +248,7 @@ def log_psi(self, samples):
 Samples configurations from the RBM.
 
 \begin{itemize}
-    \item \textbf{Metropolis-Hastings} Random Walk using TensorFlow Probability
+    \item \textbf{Metropolis-Hastings} Random Walk using \textit{TensorFlow Probability}
     \item \textbf{Gibbs sampling} Double-step method to sample visible and hidden variables
 \end{itemize}
 
@@ -246,15 +265,13 @@ array([[0., 0., 0., 0.],
 
 \end{frame}
 
-\begin{frame}{Code Implementation}
-\framesubtitle{Hamiltonian}
-Class representing the Hamiltonian of the system.
-\begin{itemize}
-    \item \textbf{Ising1D} Ising model in 1D
-    \item \textbf{TFIH} Transverse Field Ising Hamiltonian
-\end{itemize}
+\begin{frame}[fragile]{Code Implementation}
+\framesubtitle{Hamiltonian - 1D Ising}
 
-Provides methods to compute the local energy from a batch of configurations.
+Simple 1D Ising Hamiltonian:
+$$ H = -J \sum_{i} \sigma_{i} \sigma_{i+1} - h \sum_{i} \sigma_{i} $$
+
+Provides \lstinline[style=kaolstplain]|local_energy(samples)| to compute local energies.
 
 \end{frame}
 
@@ -323,11 +340,50 @@ gradients = tf.linalg.solve(S_reg, tf.expand_dims(F_vec, 1))
 \end{chapter}
 
 \begin{frame}{Results}
-\framesubtitle{1D Ising Model - 8 spins}
+\framesubtitle{1D Ising Model - 16 spins}
+Using $J = 1.0$ and $h=0.5$
+\includegraphics[height=6cm]{images/16spin_history_j1.png}
 \end{frame}
 
 \begin{frame}{Results}
-\framesubtitle{TFIH - 8 spins}
+\framesubtitle{Weights for $den = 1$}
+\begin{center}
+\includegraphics[height=6cm]{images/16spin_den1_j1.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitle{Weights for $den = 2$}
+\begin{center}
+\includegraphics[height=6cm]{images/16spin_den2_j1.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitle{Weights for $den = 4$}
+\begin{center}
+\includegraphics[height=6cm]{images/16spin_den4_j1.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitle{1D Ising Model - 16 spins}
+Using $J = -1.0$ and $h=0.5$
+\includegraphics[height=6cm]{images/16spin_history_jm1.png}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitle{Weights for $den = 2$}
+\begin{center}
+\includegraphics[height=6cm]{images/16spin_den2_jm1.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitle{Weights for $den = 4$}
+\begin{center}
+\includegraphics[height=6cm]{images/16spin_den4_jm1.png}
+\end{center}
 \end{frame}
 
 \begin{frame}{Further Work}
@@ -374,7 +430,22 @@ gradients = tf.linalg.solve(S_reg, tf.expand_dims(F_vec, 1))
 
 \begin{frame}{Appendix}
 \framesubtitle{Probabilities for the RBM}
-Conditional probabilities for visible and hidden
+
+Thanks to no intra-layer connections, we can factorize the joint probability:
+
+\begin{columns}[t]
+	\begin{column}{0.48\textwidth}
+		$$ p(\vec{\sigma} \mid \vec{h}) = \prod_{i} p(\sigma_i \mid \vec{h}) $$
+	\end{column}
+	\begin{column}{0.48\textwidth}
+		$$ p(\vec{h} \mid \vec{\sigma}) = \prod_{j} p(h_j \mid \vec{\sigma}) $$
+	\end{column}
+\end{columns}
+where:
+$$ p(\sigma_i | h) = \sigma\left(b_i + \sum_{j} W_{ij} h_j\right) $$
+$$ p(h_j | \sigma) = \sigma\left(c_j + \sum_{i} W_{ij} \sigma_i\right) $$
+where $\sigma(x) = \frac{1}{1 + e^{-x}}$ is the logistic or sigmoid function.
+
 \end{frame}
 
 \begin{frame}{Appendix}
@@ -384,20 +455,39 @@ Explicit form of the partial derivatives of $log\left(\psi\right)$
 
 \end{frame}
 
-\begin{frame}{Appendix}
+\begin{frame}[fragile]{Appendix}
 \framesubtitle{Metropolis-Hastings and MCMC sampling}
+Propose a single bit flip, and accept it with the Metropolis criterion:
+$$\alpha = \min\left(1, \frac{p(\sigma')}{p(\sigma)}\right)$$
+where $\sigma'$ is the proposed state and $\sigma$ is the current state.
+\vskip1\baselineskip
+
+Uses the \lstinline[style=kaolstplain]|tfp.mcmc| module for efficient sampling.
+\begin{itemize}
+	\item Requires target $log(p)$
+	\item Requires new state proposal
+\end{itemize}
+
 \end{frame}
 
-\begin{frame}{Appendix}
+\begin{frame}[fragile]{Appendix}
 \framesubtitle{Gibbs sampling}
-\end{frame}
-
-\begin{frame}{Appendix}
-\framesubtitle{1D Ising Model}
-\end{frame}
-
-\begin{frame}{Appendix}
-\framesubtitle{Transverse Field Ising Hamiltonian}
+We can sample the visible and hidden variables in a double-step Gibbs sampling:
+\begin{lstlisting}[language=Python, style=kaolstplain]
+def sample(self, wave_function):
+	v = tf.cast(self.current_state, tf.float32)
+	for _ in range(self.k):
+		v_complex = tf.cast(v, wave_function.W.dtype)
+		v_W = tf.matmul(v_complex, wave_function.W)
+		p_h = tf.sigmoid(tf.math.real(wave_function.b + v_W))
+		h = tf.cast(tf.random.uniform(tf.shape(p_h), dtype=tf.float32) < p_h, tf.float32)
+		h_complex = tf.cast(h, wave_function.W.dtype)
+		h_Wt = tf.matmul(h_complex, tf.transpose(wave_function.W))
+		p_v = tf.sigmoid(tf.math.real(wave_function.a + h_Wt))
+		v = tf.cast(tf.random.uniform(tf.shape(p_v), dtype=tf.float32) < p_v, tf.float32)
+	self.current_state.assign(tf.cast(v, tf.int32))
+return v
+\end{lstlisting}
 \end{frame}
 
 \end{document}
