@@ -321,7 +321,11 @@ for grad_val, var in grads_vars:
 
 \begin{frame}[fragile]{Code Implementation}
 \framesubtitle{Optimizers - VMC}
-The VMC approach computes the variational increments as follows:
+$$
+\nabla_{\mathcal{W}} \left(E\right)
+    = 2 \mathfrak{R} \left[ \langle E_{\text{loc}} \nabla_{\mathcal{W}} log(\psi) \rangle - \langle E_{\text{loc}} \rangle \langle \nabla_{\mathcal{W}} log(\psi) \rangle \right]
+$$
+
 \begin{lstlisting}[language=Python, style=kaolstplain]
 mean_energy = tf.reduce_mean(local_energies)
 for grad_i in grad_log_psi:
@@ -334,22 +338,47 @@ for grad_i in grad_log_psi:
 	)
 	gradients.append(vmc_grad)
 \end{lstlisting}
+
 \end{frame}
+
 
 \begin{frame}[fragile]{Code Implementation}
 \framesubtitle{Optimizers - Stochastic Reconfiguration}
 The SR approach computes the variational increments as follows:
+\begin{columns}
+\begin{column}{0.6\textwidth}
 \begin{lstlisting}[language=Python, style=kaolstplain]
 # compute covariance matrix / QGT
 O_mean = tf.reduce_mean(O, axis=0)
 O_centered = O - O_mean
 O_O = tf.matmul(O_centered, O_centered, transpose_a=True)
 S = O_O / norm
+\end{lstlisting}
+\end{column}
+\begin{column}{0.38\textwidth}
+$$S_{ij} = \langle O_i^{*} O_j \rangle - \langle O_i^{*} \rangle \langle O_j \rangle$$
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Code Implementation}
+\framesubtitle{Optimizers - Stochastic Reconfiguration}
+$$F = \langle E_{\text{loc}} \nabla_{\mathcal{W}} log(\psi) \rangle - \langle E_{\text{loc}} \rangle \langle \nabla_{\mathcal{W}} log(\psi) \rangle$$
+
+\begin{lstlisting}[language=Python, style=kaolstplain]
 # compute force vector
 mean_energy = tf.reduce_mean(local_energies)
 F_vec = (
 	tf.reduce_mean(local_energies * O, axis=0) - mean_energy * O_mean
 )
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Code Implementation}
+\framesubtitle{Optimizers - Stochastic Reconfiguration}
+$$\Delta \mathcal{W} = S^{-1} F$$
+
+\begin{lstlisting}[language=Python, style=kaolstplain]
 # solve for delta
 P = tf.shape(S)[0]
 S_reg = S + self.epsilon * tf.eye(P, dtype=S.dtype)
