@@ -84,7 +84,7 @@
 \framesubtitle{Neural Networks as Quantum States}
 \begin{itemize}
 	\item Quantum-many-body problems feature an exponential Hilbert-space growth
-	\item Traditional variational ansätze reduce complexity sactificing correlation and entanglement
+	\item Traditional variational ansätze reduce complexity sacrificing correlation and entanglement
 	\item Neural-network quantum states can offer expressivity with a compact set of parameters
 \end{itemize}
 
@@ -126,9 +126,11 @@ $$E(\vec{\sigma}, \vec{h}) = -\sum_{i} b_i \sigma_i - \sum_{j} c_j h_j - \sum_{i
 
 Probability Distribution:
 $$p(\vec{\sigma}, \vec{h}) = \frac{1}{Z} e^{-E(\vec{\sigma}, \vec{h})}$$
+\vskip1\baselineskip
 
-where $Z$ is the partition function:
-$$Z = \sum_{\vec{\sigma}, \vec{h}} e^{-E(\vec{\sigma}, \vec{h})}$$
+We can obtain the wave function as unnormalized probability.
+%where $Z$ is the partition function:
+%$$Z = \sum_{\vec{\sigma}, \vec{h}} e^{-E(\vec{\sigma}, \vec{h})}$$
 \end{frame}
 
 \begin{frame}{Restricted Boltzmann Machine}
@@ -531,12 +533,12 @@ where $\sigma(x) = \frac{1}{1 + e^{-x}}$ is the logistic or sigmoid function.
 
 \end{frame}
 
-\begin{frame}{Appendix}
-\framesubtitle{Local operators for the RBM}
-Explicit form of the partial derivatives of $log\left(\psi\right)$
-
-
-\end{frame}
+%\begin{frame}{Appendix}
+%\framesubtitle{Local operators for the RBM}
+%Explicit form of the partial derivatives of $log\left(\psi\right)$
+%
+%
+%\end{frame}
 
 \begin{frame}[fragile]{Appendix}
 \framesubtitle{Metropolis-Hastings and MCMC sampling}
@@ -553,24 +555,19 @@ Uses the \lstinline[style=kaolstplain]|tfp.mcmc| module for efficient sampling.
 
 \end{frame}
 
-\begin{frame}[fragile]{Appendix}
+\begin{frame}{Appendix}
 \framesubtitle{Gibbs sampling}
 We can sample the visible and hidden variables in a double-step Gibbs sampling:
-\begin{lstlisting}[language=Python, style=kaolstplain]
-def sample(self, wave_function):
-	v = tf.cast(self.current_state, tf.float32)
-	for _ in range(self.k):
-		v_complex = tf.cast(v, wave_function.W.dtype)
-		v_W = tf.matmul(v_complex, wave_function.W)
-		p_h = tf.sigmoid(tf.math.real(wave_function.b + v_W))
-		h = tf.cast(tf.random.uniform(tf.shape(p_h), dtype=tf.float32) < p_h, tf.float32)
-		h_complex = tf.cast(h, wave_function.W.dtype)
-		h_Wt = tf.matmul(h_complex, tf.transpose(wave_function.W))
-		p_v = tf.sigmoid(tf.math.real(wave_function.a + h_Wt))
-		v = tf.cast(tf.random.uniform(tf.shape(p_v), dtype=tf.float32) < p_v, tf.float32)
-	self.current_state.assign(tf.cast(v, tf.int32))
-return v
-\end{lstlisting}
+
+\textbf{Algorithm:} For $k$ iterations:
+
+\textbf{Step 1: Sample hidden units}
+$$p(h_j = 1 | \vec{v}) = \sigma\left(c_j + \sum_i W_{ij} v_i\right)$$
+
+\textbf{Step 2: Sample visible units}  
+$$p(v_i = 1 | \vec{h}) = \sigma\left(b_i + \sum_j W_{ij} h_j\right)$$
+
+where $\sigma(x) = \frac{1}{1 + e^{-x}}$ is the sigmoid function.
 \end{frame}
 
 \end{document}
